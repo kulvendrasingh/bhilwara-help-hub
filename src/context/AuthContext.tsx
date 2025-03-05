@@ -1,5 +1,8 @@
+
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 // Define user type
 export type User = {
@@ -16,7 +19,7 @@ type AuthContextType = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 // Create context with default values
@@ -25,11 +28,19 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => {},
   register: async () => {},
-  logout: () => {},
+  logout: async () => {},
 });
 
-// Generate a random ID (for demo purposes)
-const generateId = () => Math.random().toString(36).substring(2, 15);
+// Map Supabase user to our User type
+const mapSupabaseUser = (supabaseUser: SupabaseUser): User => {
+  return {
+    id: supabaseUser.id,
+    name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
+    email: supabaseUser.email || '',
+    avatar: supabaseUser.user_metadata?.avatar_url,
+    createdAt: new Date(supabaseUser.created_at || Date.now()),
+  };
+};
 
 // Auth provider component
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -38,37 +49,67 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Check for existing session on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("bhilwara-user");
-    if (storedUser) {
+    const checkSession = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem("bhilwara-user");
+        setIsLoading(true);
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          return;
+        }
+        
+        if (data?.session?.user) {
+          setUser(mapSupabaseUser(data.session.user));
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+
+    checkSession();
+
+    // Set up auth subscription
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(mapSupabaseUser(session.user));
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
   }, []);
 
   // Login function
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // For demo purposes - in a real app, this would validate via API
-      const mockUser: User = {
-        id: generateId(),
-        name: email.split('@')[0],
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        createdAt: new Date(),
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem("bhilwara-user", JSON.stringify(mockUser));
-      toast.success("Login successful!");
-    } catch (error) {
-      toast.error("Login failed. Please try again.");
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.user) {
+        setUser(mapSupabaseUser(data.user));
+        toast.success("Login successful!");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error(error.message || "Login failed. Please try again.");
       throw error;
     } finally {
       setIsLoading(false);
@@ -79,22 +120,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     try {
       setIsLoading(true);
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // For demo purposes - in a real app, this would register via API
-      const newUser: User = {
-        id: generateId(),
-        name,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        createdAt: new Date(),
-      };
-      
-      setUser(newUser);
-      localStorage.setItem("bhilwara-user", JSON.stringify(newUser));
-      toast.success("Registration successful!");
-    } catch (error) {
-      toast.error("Registration failed. Please try again.");
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.user) {
+        toast.success("Registration successful! Please check your email to confirm your account.");
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast.error(error.message || "Registration failed. Please try again.");
       throw error;
     } finally {
       setIsLoading(false);
@@ -102,10 +148,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // Logout function
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("bhilwara-user");
-    toast.success("Logged out successfully");
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
+      setUser(null);
+      toast.success("Logged out successfully");
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      toast.error(error.message || "Logout failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

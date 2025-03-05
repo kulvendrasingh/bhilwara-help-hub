@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,11 +44,10 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login(values.email, values.password);
-      toast.success("Logged in successfully!");
       navigate("/");
     } catch (error) {
+      // Error handling is already done in the AuthContext
       console.error("Login error:", error);
-      toast.error("Login failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
