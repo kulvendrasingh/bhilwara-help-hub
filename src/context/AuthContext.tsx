@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
 // Define user type
@@ -17,6 +17,7 @@ export type User = {
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
+  supabaseConfigured: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -26,6 +27,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
+  supabaseConfigured: false,
   login: async () => {},
   register: async () => {},
   logout: async () => {},
@@ -46,12 +48,24 @@ const mapSupabaseUser = (supabaseUser: SupabaseUser): User => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [supabaseConfigured, setSupabaseConfigured] = useState(false);
 
   // Check for existing session on mount
   useEffect(() => {
     const checkSession = async () => {
       try {
         setIsLoading(true);
+        
+        // Check if Supabase is configured
+        const configured = isSupabaseConfigured();
+        setSupabaseConfigured(configured);
+        
+        if (!configured) {
+          console.warn("Supabase is not properly configured. Authentication will not work.");
+          setIsLoading(false);
+          return;
+        }
+        
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -93,6 +107,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Login function
   const login = async (email: string, password: string) => {
     try {
+      if (!supabaseConfigured) {
+        toast.error("Authentication is not configured. Please set up Supabase environment variables.");
+        return;
+      }
+      
       setIsLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -119,6 +138,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Register function
   const register = async (name: string, email: string, password: string) => {
     try {
+      if (!supabaseConfigured) {
+        toast.error("Authentication is not configured. Please set up Supabase environment variables.");
+        return;
+      }
+      
       setIsLoading(true);
       
       const { data, error } = await supabase.auth.signUp({
@@ -150,6 +174,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Logout function
   const logout = async () => {
     try {
+      if (!supabaseConfigured) {
+        setUser(null);
+        return;
+      }
+      
       setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       
@@ -172,6 +201,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         user,
         isLoading,
+        supabaseConfigured,
         login,
         register,
         logout,
