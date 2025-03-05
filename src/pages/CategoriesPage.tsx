@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,13 +6,13 @@ import { PageLayout } from "@/components/PageLayout";
 import { 
   Droplet, 
   Zap, 
-  Road, 
   Trash, 
   BookOpen, 
   Shield, 
   HelpCircle, 
   HeartPulse 
 } from "lucide-react";
+import RoadIcon from "@/components/icons/RoadIcon";
 
 export default function CategoriesPage() {
   const navigate = useNavigate();
@@ -23,7 +22,7 @@ export default function CategoriesPage() {
   const categoryIcons: Record<string, React.ReactNode> = {
     "water-supply": <Droplet size={36} className="text-blue-500" />,
     "electricity": <Zap size={36} className="text-yellow-500" />,
-    "roads-transport": <Road size={36} className="text-orange-500" />,
+    "roads-transport": <RoadIcon size={36} className="text-orange-500" />,
     "waste-management": <Trash size={36} className="text-green-500" />,
     "healthcare": <HeartPulse size={36} className="text-red-500" />,
     "education": <BookOpen size={36} className="text-purple-500" />,

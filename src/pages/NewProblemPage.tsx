@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +24,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { DataService } from "@/lib/data-service";
 import { PageLayout } from "@/components/PageLayout";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   title: z.string().min(5, {

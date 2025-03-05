@@ -1,9 +1,9 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Droplet, Zap, Road, Trash, BookOpen, Shield, HelpCircle, HeartPulse } from "lucide-react";
+import { ArrowRight, Droplet, Zap, Trash, BookOpen, Shield, HelpCircle, HeartPulse } from "lucide-react";
+import RoadIcon from "@/components/icons/RoadIcon";
 import { PageLayout } from "@/components/PageLayout";
 
 export default function HomePage() {
@@ -12,7 +12,7 @@ export default function HomePage() {
   const categories = [
     { name: "Water Supply", icon: <Droplet size={24} className="text-blue-500" />, slug: "water-supply" },
     { name: "Electricity", icon: <Zap size={24} className="text-yellow-500" />, slug: "electricity" },
-    { name: "Roads & Transport", icon: <Road size={24} className="text-orange-500" />, slug: "roads-transport" },
+    { name: "Roads & Transport", icon: <RoadIcon size={24} className="text-orange-500" />, slug: "roads-transport" },
     { name: "Waste Management", icon: <Trash size={24} className="text-green-500" />, slug: "waste-management" },
     { name: "Healthcare", icon: <HeartPulse size={24} className="text-red-500" />, slug: "healthcare" },
     { name: "Education", icon: <BookOpen size={24} className="text-purple-500" />, slug: "education" },
