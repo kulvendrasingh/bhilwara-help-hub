@@ -15,3 +15,31 @@ export const supabase = createClient(
 export const isSupabaseConfigured = () => {
   return supabaseUrl !== '' && supabaseAnonKey !== '';
 };
+
+// Helper to verify email confirmation status
+export const checkEmailConfirmationStatus = async (email: string) => {
+  if (!isSupabaseConfigured()) {
+    return { confirmed: false, error: 'Supabase not configured' };
+  }
+  
+  try {
+    // This will return user data if the email exists and is confirmed
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false, // Don't create a new user
+      },
+    });
+    
+    // If there's no error and data exists, the email is confirmed
+    return { 
+      confirmed: !error && !!data, 
+      error: error?.message 
+    };
+  } catch (error: any) {
+    return { 
+      confirmed: false, 
+      error: error?.message || 'Failed to check email confirmation status'
+    };
+  }
+};

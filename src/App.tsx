@@ -16,6 +16,7 @@ import NewProblemPage from "./pages/NewProblemPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import CategoryDetailPage from "./pages/CategoryDetailPage";
 import AboutPage from "./pages/AboutPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/category/:slug" element={<CategoryDetailPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

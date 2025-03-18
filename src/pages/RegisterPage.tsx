@@ -17,6 +17,8 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PageLayout } from "@/components/PageLayout";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -35,10 +37,11 @@ const formSchema = z.object({
 });
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register, supabaseConfigured } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState("");
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,9 +54,15 @@ export default function RegisterPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!supabaseConfigured) {
+      toast.error("Authentication is not configured. Please set up Supabase environment variables.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       await register(values.name, values.email, values.password);
+      setRegisteredEmail(values.email);
       setSuccessMessage("Account created successfully! Please check your email to confirm your account.");
       form.reset();
     } catch (error) {
@@ -102,16 +111,49 @@ export default function RegisterPage() {
               </p>
             </div>
             
+            {!supabaseConfigured && (
+              <Alert className="bg-amber-50 text-amber-800 border-amber-200">
+                <Info className="h-4 w-4" />
+                <AlertTitle>Supabase not configured</AlertTitle>
+                <AlertDescription>
+                  Please set the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {successMessage ? (
-              <div className="bg-green-50 p-4 rounded-md border border-green-200">
-                <p className="text-green-700 text-center">{successMessage}</p>
-                <Button 
-                  className="w-full mt-4" 
-                  variant="outline"
-                  onClick={() => navigate("/login")}
-                >
-                  Go to Login
-                </Button>
+              <div className="bg-green-50 p-6 rounded-md border border-green-200 animate-fade-in">
+                <h3 className="font-medium text-green-800 mb-2">Account Created Successfully!</h3>
+                <p className="text-green-700 text-sm mb-4">
+                  We've sent a confirmation email to <strong>{registeredEmail}</strong>. 
+                  Please check your inbox and click the confirmation link to activate your account.
+                </p>
+                <Alert className="bg-blue-50 text-blue-800 border-blue-200 mb-4">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Important</AlertTitle>
+                  <AlertDescription className="text-xs">
+                    You won't be able to log in until you confirm your email address. 
+                    If you don't see the email, please check your spam folder.
+                  </AlertDescription>
+                </Alert>
+                <div className="flex gap-3">
+                  <Button 
+                    className="flex-1" 
+                    variant="outline"
+                    onClick={() => navigate("/login")}
+                  >
+                    Go to Login
+                  </Button>
+                  <Button 
+                    className="flex-1" 
+                    onClick={() => {
+                      setSuccessMessage("");
+                      setRegisteredEmail("");
+                    }}
+                  >
+                    Register Another
+                  </Button>
+                </div>
               </div>
             ) : (
               <Form {...form}>
